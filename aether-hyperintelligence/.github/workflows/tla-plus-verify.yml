@@ -1,0 +1,32 @@
+﻿name: tla-plus-verify
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  tla-plus-verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Download TLC
+        run: |
+          mkdir -p tools/tla
+          curl -L -o tools/tla/tla2tools.jar https://github.com/tlaplus/tlaplus/releases/latest/download/tla2tools.jar
+
+      - name: Run TLC - IncidentCommandFSM
+        working-directory: formal-verification/tla+
+        run: |
+          java -jar ../../tools/tla/tla2tools.jar \
+            -config ../model-checker/IncidentFSM.cfg \
+            IncidentCommandFSM.tla

@@ -1,0 +1,222 @@
+﻿{
+  "successful": [
+    {
+      "incident_text": "Users cannot access payroll portal after last night's deployment.",
+      "kb_articles_used": "KB-1001 rollback checklist; KB-1044 SSO token refresh; KB-1099 gateway cache clear",
+      "recent_changes": "APP-Deploy-9212, SSO-Cert-Rotate-12",
+      "verified_priority": "1",
+      "verified_category": "app",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Intermittent API timeout on order service affecting checkout.",
+      "kb_articles_used": "KB-2021 timeout triage; KB-2022 threadpool tuning",
+      "recent_changes": "INFRA-ScaleSet-22, APP-Release-812",
+      "verified_priority": "2",
+      "verified_category": "infra",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "ServiceNow webhook events delayed by 10 minutes.",
+      "kb_articles_used": "KB-3001 webhook retry policy; KB-3002 queue drain guide",
+      "recent_changes": "INT-Webhook-Change-77",
+      "verified_priority": "3",
+      "verified_category": "network",
+      "was_auto_resolved": false
+    },
+    {
+      "incident_text": "Finance batch failed due to malformed CSV from upstream vendor.",
+      "kb_articles_used": "KB-4101 CSV validation; KB-4107 vendor feed schema updates",
+      "recent_changes": "DATA-Map-Rel-43",
+      "verified_priority": "2",
+      "verified_category": "data",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Unexpected admin login attempts detected on internal console.",
+      "kb_articles_used": "KB-5001 suspicious login response; KB-5002 temporary account lock policy",
+      "recent_changes": "SEC-Policy-128",
+      "verified_priority": "1",
+      "verified_category": "security",
+      "was_auto_resolved": false
+    },
+    {
+      "incident_text": "Order export job stuck in queued state for 45 minutes.",
+      "kb_articles_used": "KB-6101 worker recycle; KB-6105 scheduler restart",
+      "recent_changes": "OPS-Scheduler-Update-19",
+      "verified_priority": "3",
+      "verified_category": "app",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Database replica lag causing stale dashboard values.",
+      "kb_articles_used": "KB-7102 replica lag diagnostics; KB-7105 read-only failover notes",
+      "recent_changes": "DB-Maint-301",
+      "verified_priority": "2",
+      "verified_category": "data",
+      "was_auto_resolved": false
+    },
+    {
+      "incident_text": "VPN users unable to reach internal HR app from EU region.",
+      "kb_articles_used": "KB-8010 regional firewall rules; KB-8011 VPN route propagation",
+      "recent_changes": "NET-FW-Change-12",
+      "verified_priority": "2",
+      "verified_category": "network",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Warehouse scanner sync failing after certificate renewal.",
+      "kb_articles_used": "KB-9011 device cert redeploy; KB-9012 scanner gateway trust store",
+      "recent_changes": "PKI-Renew-44",
+      "verified_priority": "2",
+      "verified_category": "security",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Invoice generation duplicated for three customers.",
+      "kb_articles_used": "KB-10021 idempotency safeguards; KB-10022 queue dedupe runbook",
+      "recent_changes": "BILLING-Queue-7",
+      "verified_priority": "2",
+      "verified_category": "data",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "End users report blank screen in CRM after browser refresh.",
+      "kb_articles_used": "KB-11001 SPA asset cache clear; KB-11003 front-end build mismatch",
+      "recent_changes": "CRM-Web-Rel-602",
+      "verified_priority": "2",
+      "verified_category": "app",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Customer import API returning 429 errors for bulk job.",
+      "kb_articles_used": "KB-12001 API throttling policy; KB-12002 stagger retry strategy",
+      "recent_changes": "API-RateLimit-Update-4",
+      "verified_priority": "3",
+      "verified_category": "infra",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Security agent quarantined payment service binary on two hosts.",
+      "kb_articles_used": "KB-13001 malware false positive handling; KB-13004 allowlist process",
+      "recent_changes": "EDR-Signature-Update-9",
+      "verified_priority": "1",
+      "verified_category": "security",
+      "was_auto_resolved": false
+    },
+    {
+      "incident_text": "Attachment uploads failing only for files over 20MB.",
+      "kb_articles_used": "KB-14001 reverse proxy body size; KB-14002 object storage timeout",
+      "recent_changes": "NGINX-Conf-18",
+      "verified_priority": "3",
+      "verified_category": "infra",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "ERP sync job missing tax fields for newly onboarded country.",
+      "kb_articles_used": "KB-15001 mapping config expansion; KB-15007 jurisdiction rule onboarding",
+      "recent_changes": "ERP-MAP-Update-88",
+      "verified_priority": "2",
+      "verified_category": "data",
+      "was_auto_resolved": false
+    },
+    {
+      "incident_text": "Agent desktop app cannot fetch latest policy documents.",
+      "kb_articles_used": "KB-16001 CDN purge guide; KB-16003 auth token refresh",
+      "recent_changes": "DOCS-CDN-Deploy-17",
+      "verified_priority": "3",
+      "verified_category": "app",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Metrics exporter stopped publishing from one Kubernetes node.",
+      "kb_articles_used": "KB-17001 daemonset restart; KB-17002 node disk pressure investigation",
+      "recent_changes": "K8S-NodePatch-31",
+      "verified_priority": "3",
+      "verified_category": "infra",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Users in APAC experiencing slow login due to identity latency.",
+      "kb_articles_used": "KB-18001 regional IdP failover; KB-18002 DNS latency checks",
+      "recent_changes": "DNS-Change-44",
+      "verified_priority": "2",
+      "verified_category": "network",
+      "was_auto_resolved": false
+    },
+    {
+      "incident_text": "Approval emails not delivered to external partner domains.",
+      "kb_articles_used": "KB-19001 SPF/DKIM troubleshooting; KB-19003 mail relay queue inspect",
+      "recent_changes": "MAIL-Relay-Update-5",
+      "verified_priority": "3",
+      "verified_category": "network",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Field service mobile app crashes on startup after update.",
+      "kb_articles_used": "KB-20001 mobile rollback; KB-20002 crash log collection",
+      "recent_changes": "MOB-Release-111",
+      "verified_priority": "2",
+      "verified_category": "app",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Backup verification failed for one storage account.",
+      "kb_articles_used": "KB-21001 backup checksum verification; KB-21003 storage key rotation",
+      "recent_changes": "STG-KeyRotate-21",
+      "verified_priority": "3",
+      "verified_category": "infra",
+      "was_auto_resolved": false
+    },
+    {
+      "incident_text": "Partner SFTP ingestion delayed after account password reset.",
+      "kb_articles_used": "KB-22001 SFTP credential sync; KB-22002 partner handshake retry",
+      "recent_changes": "SFTP-Account-Reset-2",
+      "verified_priority": "3",
+      "verified_category": "network",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Search index freshness behind by one hour after reindex.",
+      "kb_articles_used": "KB-23001 indexer throughput; KB-23003 queue backlog cleanup",
+      "recent_changes": "SEARCH-Reindex-12",
+      "verified_priority": "3",
+      "verified_category": "data",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Admin audit reports export as empty files in Edge browser.",
+      "kb_articles_used": "KB-24001 browser download headers; KB-24002 report generator patch",
+      "recent_changes": "REPORTS-Release-77",
+      "verified_priority": "4",
+      "verified_category": "app",
+      "was_auto_resolved": true
+    },
+    {
+      "incident_text": "Queue processing spike causing delayed shipment updates.",
+      "kb_articles_used": "KB-25001 burst scaling policy; KB-25002 dead-letter inspection",
+      "recent_changes": "BUS-ScaleRule-13",
+      "verified_priority": "2",
+      "verified_category": "infra",
+      "was_auto_resolved": true
+    }
+  ],
+  "failed": [
+    {
+      "incident_text": "CRM attachments inaccessible after storage firewall update.",
+      "kb_articles_used": "KB-26001 storage firewall incident",
+      "recent_changes": "STG-FW-Change-3",
+      "verified_priority": "2",
+      "verified_category": "network",
+      "was_auto_resolved": false
+    },
+    {
+      "incident_text": "Region-specific checkout tax miscalculation for Quebec.",
+      "kb_articles_used": "KB-27001 tax rule override",
+      "recent_changes": "TAX-RULE-Deploy-6",
+      "verified_priority": "2",
+      "verified_category": "data",
+      "was_auto_resolved": false
+    }
+  ]
+}

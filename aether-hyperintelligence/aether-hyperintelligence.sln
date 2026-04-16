@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A92A7ACB-DAEE-4772-AA9F-BDB8091623E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aether.Crypto", "src\Aether.Crypto\Aether.Crypto.csproj", "{0BFE36A5-E151-4704-83F3-FBF627F88407}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aether.Core", "src\Aether.Core\Aether.Core.csproj", "{98177290-A8D5-4F22-8FA6-E4545B7CB1B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aether.Agents", "src\Aether.Agents\Aether.Agents.csproj", "{A1AE7357-5381-4907-9BD7-118C19DF875B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0BFE36A5-E151-4704-83F3-FBF627F88407}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BFE36A5-E151-4704-83F3-FBF627F88407}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BFE36A5-E151-4704-83F3-FBF627F88407}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BFE36A5-E151-4704-83F3-FBF627F88407}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98177290-A8D5-4F22-8FA6-E4545B7CB1B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98177290-A8D5-4F22-8FA6-E4545B7CB1B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98177290-A8D5-4F22-8FA6-E4545B7CB1B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98177290-A8D5-4F22-8FA6-E4545B7CB1B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1AE7357-5381-4907-9BD7-118C19DF875B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1AE7357-5381-4907-9BD7-118C19DF875B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1AE7357-5381-4907-9BD7-118C19DF875B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1AE7357-5381-4907-9BD7-118C19DF875B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0BFE36A5-E151-4704-83F3-FBF627F88407} = {A92A7ACB-DAEE-4772-AA9F-BDB8091623E2}
+		{98177290-A8D5-4F22-8FA6-E4545B7CB1B0} = {A92A7ACB-DAEE-4772-AA9F-BDB8091623E2}
+		{A1AE7357-5381-4907-9BD7-118C19DF875B} = {A92A7ACB-DAEE-4772-AA9F-BDB8091623E2}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,50 @@
+﻿name: dspy-nightly-optimiser
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  optimise:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dspy.txt
+
+      - name: Run DSPy nightly optimiser
+        env:
+          # Generic model/base/key options for modern DSPy LM(...)
+          AETHER_DSPY_MODEL: ${{ vars.AETHER_DSPY_MODEL }}
+          AETHER_API_BASE: ${{ vars.AETHER_API_BASE }}
+          AETHER_API_KEY: ${{ secrets.AETHER_API_KEY }}
+
+          # Optional fallbacks if you prefer Azure/OpenAI naming
+          AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+          # Metrics / PR integration
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AETHER_PR_BASE_BRANCH: main
+        run: |
+          python src/langgraph/dspy/nightly_optimiser.py
