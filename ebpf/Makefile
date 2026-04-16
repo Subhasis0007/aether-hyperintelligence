@@ -1,6 +1,7 @@
 CLANG ?= clang
+ARCH ?= $(shell uname -m)
 BPF_CFLAGS := -O2 -g -target bpf -D__TARGET_ARCH_x86
-INCLUDES :=
+INCLUDES := -I/usr/include/$(ARCH)-linux-gnu
 
 all: aether_https_meta_trace.bpf.o
 
