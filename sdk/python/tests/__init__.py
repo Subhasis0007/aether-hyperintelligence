@@ -1,0 +1,1 @@
+# AETHER Python SDK tests package
