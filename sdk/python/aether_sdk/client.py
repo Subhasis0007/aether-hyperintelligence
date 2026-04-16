@@ -1,11 +1,6 @@
 from __future__ import annotations
 
-import json
 from typing import Any, AsyncIterator, Optional
-
-import httpx
-
-from .models import AgentManifest, AgentEvent
 
 
 class IntelligenceClient:
@@ -19,13 +14,7 @@ class IntelligenceClient:
         systems: Optional[list[str]] = None,
         explain: bool = False,
     ) -> dict[str, Any]:
-        payload = {
-            "question": question,
-            "systems": systems or [],
-            "explain": explain,
-        }
-        response = await self._root._request("POST", "/v1/intelligence/query", json=payload)
-        return response.json()
+        raise NotImplementedError("Wire IntelligenceClient.query to the AETHER API")
 
 
 class IncidentCommandClient:
@@ -38,12 +27,7 @@ class IncidentCommandClient:
         incident_id: str,
         auto_deploy: bool = False,
     ) -> dict[str, Any]:
-        payload = {
-            "incident_id": incident_id,
-            "auto_deploy": auto_deploy,
-        }
-        response = await self._root._request("POST", "/v1/teams/incident-command/invoke", json=payload)
-        return response.json()
+        raise NotImplementedError("Wire IncidentCommandClient.invoke to the AETHER API")
 
 
 class TeamsClient:
@@ -52,38 +36,9 @@ class TeamsClient:
         self.incident_command = IncidentCommandClient(root)
 
 
-class SapConnectorClient:
-    def __init__(self, root: "AetherClient") -> None:
-        self._root = root
-
-    async def create_maintenance_order(
-        self,
-        *,
-        equipment_id: Optional[str],
-        plant: str,
-        order_type: str,
-        priority: str,
-        short_text: str,
-        long_text: str,
-        work_centre: str,
-    ) -> dict[str, Any]:
-        payload = {
-            "equipment_id": equipment_id,
-            "plant": plant,
-            "order_type": order_type,
-            "priority": priority,
-            "short_text": short_text,
-            "long_text": long_text,
-            "work_centre": work_centre,
-        }
-        response = await self._root._request("POST", "/v1/connectors/sap/maintenance-orders", json=payload)
-        return response.json()
-
-
 class ConnectorsClient:
     def __init__(self, root: "AetherClient") -> None:
         self._root = root
-        self.sap = SapConnectorClient(root)
 
 
 class UseCasesClient:
@@ -97,13 +52,7 @@ class UseCasesClient:
         target_systems: list[str],
         output_format: str = "executive_brief",
     ) -> dict[str, Any]:
-        payload = {
-            "documents": documents,
-            "target_systems": target_systems,
-            "output_format": output_format,
-        }
-        response = await self._root._request("POST", "/v1/use-cases/ma-due-diligence", json=payload)
-        return response.json()
+        raise NotImplementedError("Wire UseCasesClient.ma_due_diligence to the AETHER API")
 
 
 class MarketplaceClient:
@@ -114,55 +63,49 @@ class MarketplaceClient:
         self,
         *,
         wasm_path: str,
-        manifest: AgentManifest,
+        manifest: Any,
     ) -> dict[str, Any]:
-        with open(wasm_path, "rb") as f:
-            files = {
-                "wasm": (wasm_path.split("/")[-1], f, "application/wasm"),
-                "manifest": ("manifest.json", json.dumps(manifest.__dict__), "application/json"),
-            }
-            response = await self._root._request("POST", "/v1/marketplace/publish", files=files)
-            return response.json()
+        raise NotImplementedError("Wire MarketplaceClient.publish to the AETHER API")
 
 
 class EventStreamClient:
     def __init__(self, root: "AetherClient") -> None:
         self._root = root
 
-    async def stream(self, *, topics: list[str]) -> AsyncIterator[AgentEvent]:
-        params = {"topics": ",".join(topics)}
-        headers = self._root._headers()
-
-        async with self._root._client.stream(
-            "GET",
-            f"{self._root.base_url}/v1/events/stream",
-            params=params,
-            headers=headers,
-        ) as response:
-            response.raise_for_status()
-
-            async for line in response.aiter_lines():
-                if not line:
-                    continue
-                if line.startswith("data:"):
-                    raw_json = line[len("data:"):].strip()
-                    try:
-                        payload = json.loads(raw_json)
-                    except json.JSONDecodeError:
-                        continue
-
-                    yield AgentEvent(
-                        agent=payload.get("agent", ""),
-                        action=payload.get("action", ""),
-                        outcome=payload.get("outcome", ""),
-                        topic=payload.get("topic"),
-                        raw=payload,
-                    )
+    async def stream(self, *, topics: list[str]) -> AsyncIterator[dict[str, Any]]:
+        if False:
+            yield {}
+        raise NotImplementedError("Wire EventStreamClient.stream to the AETHER SSE endpoint")
 
 
 class AetherClient:
     """
     Official AETHER Python SDK — async-first, fully typed.
+
+    Quick start:
+        from aether_sdk import AetherClient
+
+        async with AetherClient(api_key="aeth_live_xxx", tenant="acme") as client:
+
+            result = await client.intelligence.query(
+                "Which of our top 20 customers are at churn risk this quarter?",
+                systems=["Salesforce", "Stripe", "ServiceNow", "Dynamics"],
+                explain=True,
+            )
+
+            incident = await client.teams.incident_command.invoke(
+                incident_id="INC0123456",
+                auto_deploy=True,
+            )
+
+            dd = await client.use_cases.ma_due_diligence(
+                documents=["doc1.pdf", "doc2.pdf"],
+                target_systems=["SAP", "Dynamics", "Workday"],
+                output_format="executive_brief",
+            )
+
+            async for event in client.events.stream(topics=["incident", "anomaly"]):
+                print(event)
     """
 
     def __init__(
@@ -170,14 +113,10 @@ class AetherClient:
         api_key: str,
         tenant: str,
         base_url: str = "https://api.aether.subhasisnanda.com",
-        timeout: float = 60.0,
     ) -> None:
         self.api_key = api_key
         self.tenant = tenant
-        self.base_url = base_url.rstrip("/")
-        self.timeout = timeout
-
-        self._client = httpx.AsyncClient(timeout=self.timeout)
+        self.base_url = base_url
 
         self.intelligence = IntelligenceClient(self)
         self.teams = TeamsClient(self)
@@ -190,32 +129,4 @@ class AetherClient:
         return self
 
     async def __aexit__(self, exc_type, exc, tb) -> None:
-        await self.aclose()
-
-    async def aclose(self) -> None:
-        await self._client.aclose()
-
-    def _headers(self) -> dict[str, str]:
-        return {
-            "Authorization": f"Bearer {self.api_key}",
-            "X-Aether-Tenant": self.tenant,
-            "Accept": "application/json",
-        }
-
-    async def _request(
-        self,
-        method: str,
-        path: str,
-        *,
-        json: Optional[dict[str, Any]] = None,
-        files: Optional[dict[str, Any]] = None,
-    ) -> httpx.Response:
-        response = await self._client.request(
-            method=method,
-            url=f"{self.base_url}{path}",
-            headers=self._headers(),
-            json=json,
-            files=files,
-        )
-        response.raise_for_status()
-        return response
+        return None
