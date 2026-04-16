@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 from typing import Any, AsyncIterator, Optional
@@ -161,6 +161,10 @@ class EventStreamClient:
 
 
 class AetherClient:
+    """
+    Official AETHER Python SDK — async-first, fully typed.
+    """
+
     def __init__(
         self,
         api_key: str,
