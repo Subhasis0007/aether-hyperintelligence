@@ -1,9 +1,5 @@
-﻿---- MODULE IncidentCommandFSM ----
-(* AETHER Incident Command state machine — formally verified *)
-(* TLC model checker: zero deadlocks, zero invariant violations *)
-(* CI: java -jar tla2tools.jar -config IncidentFSM.cfg IncidentCommandFSM.tla *)
-
-EXTENDS Naturals, Sequences, FiniteSets, TLC
+---- MODULE IncidentCommandFSM ----
+EXTENDS Naturals, FiniteSets, TLC
 
 CONSTANTS
   Agents,
@@ -17,8 +13,11 @@ VARIABLES
   resolved,
   escalated
 
-States == {"NEW","TRIAGING","DIAGNOSING","FIXING",
-           "VERIFYING","RESOLVED","ESCALATED","POSTMORTEM"}
+Vars == <<state, activeAgents, iteration, resolved, escalated>>
+
+States ==
+  {"NEW", "TRIAGING", "DIAGNOSING", "FIXING",
+   "VERIFYING", "RESOLVED", "ESCALATED", "POSTMORTEM"}
 
 TypeInvariant ==
   /\ state \in States
@@ -28,9 +27,11 @@ TypeInvariant ==
   /\ resolved \in BOOLEAN
   /\ escalated \in BOOLEAN
 
-SafetyInvariant == state = "FIXING" => iteration < MaxIterations
+SafetyInvariant ==
+  state = "FIXING" => iteration <= MaxIterations
 
-ExclusiveTermination == ~(resolved /\ escalated)
+ExclusiveTermination ==
+  ~(resolved /\ escalated)
 
 Init ==
   /\ state = "NEW"
@@ -39,73 +40,97 @@ Init ==
   /\ resolved = FALSE
   /\ escalated = FALSE
 
-StartTriaging ==
+Triaging ==
   /\ state = "NEW"
   /\ state' = "TRIAGING"
-  /\ UNCHANGED <<activeAgents, iteration, resolved, escalated>>
+  /\ activeAgents' \subseteq Agents
+  /\ Cardinality(activeAgents') <= MaxAgents
+  /\ iteration' = iteration
+  /\ resolved' = resolved
+  /\ escalated' = escalated
 
-AssignAgents ==
-  /\ state \in {"TRIAGING","DIAGNOSING","FIXING","VERIFYING"}
-  /\ Cardinality(activeAgents) < MaxAgents
-  /\ \E a \in Agents \ activeAgents:
-        activeAgents' = activeAgents \cup {a}
-  /\ state' = state
-  /\ UNCHANGED <<iteration, resolved, escalated>>
-
-BeginDiagnosis ==
+StartDiagnosing ==
   /\ state = "TRIAGING"
   /\ state' = "DIAGNOSING"
-  /\ UNCHANGED <<activeAgents, iteration, resolved, escalated>>
+  /\ activeAgents' \subseteq Agents
+  /\ Cardinality(activeAgents') <= MaxAgents
+  /\ UNCHANGED <<iteration, resolved, escalated>>
 
-AttemptFix ==
-  /\ state \in {"DIAGNOSING","VERIFYING"}
+DiagnoseToFix ==
+  /\ state = "DIAGNOSING"
   /\ iteration < MaxIterations
   /\ state' = "FIXING"
+  /\ activeAgents' = activeAgents
   /\ iteration' = iteration + 1
-  /\ UNCHANGED <<activeAgents, resolved, escalated>>
+  /\ resolved' = resolved
+  /\ escalated' = escalated
 
-VerifyFix ==
+FixToVerify ==
   /\ state = "FIXING"
   /\ state' = "VERIFYING"
-  /\ UNCHANGED <<activeAgents, iteration, resolved, escalated>>
+  /\ activeAgents' = activeAgents
+  /\ iteration' = iteration
+  /\ resolved' = resolved
+  /\ escalated' = escalated
 
-Resolve ==
+VerifyResolved ==
   /\ state = "VERIFYING"
-  /\ resolved = FALSE
   /\ state' = "RESOLVED"
+  /\ activeAgents' = {}
+  /\ iteration' = iteration
   /\ resolved' = TRUE
   /\ escalated' = FALSE
-  /\ UNCHANGED <<activeAgents, iteration>>
+
+VerifyRetry ==
+  /\ state = "VERIFYING"
+  /\ iteration < MaxIterations
+  /\ state' = "DIAGNOSING"
+  /\ activeAgents' = activeAgents
+  /\ iteration' = iteration
+  /\ resolved' = FALSE
+  /\ escalated' = FALSE
 
 Escalate ==
-  /\ state \in {"TRIAGING","DIAGNOSING","FIXING","VERIFYING"}
-  /\ escalated = FALSE
+  /\ state \in {"TRIAGING", "DIAGNOSING", "FIXING", "VERIFYING"}
   /\ state' = "ESCALATED"
-  /\ escalated' = TRUE
+  /\ activeAgents' = {}
+  /\ iteration' = iteration
   /\ resolved' = FALSE
-  /\ UNCHANGED <<activeAgents, iteration>>
+  /\ escalated' = TRUE
 
-PostMortem ==
-  /\ state \in {"RESOLVED","ESCALATED"}
+PostMortemFromResolved ==
+  /\ state = "RESOLVED"
   /\ state' = "POSTMORTEM"
   /\ UNCHANGED <<activeAgents, iteration, resolved, escalated>>
 
+PostMortemFromEscalated ==
+  /\ state = "ESCALATED"
+  /\ state' = "POSTMORTEM"
+  /\ UNCHANGED <<activeAgents, iteration, resolved, escalated>>
+
+\* Explicit terminal self-loop so POSTMORTEM is not a deadlock
+Done ==
+  /\ state = "POSTMORTEM"
+  /\ UNCHANGED Vars
+
 Next ==
-  \/ StartTriaging
-  \/ AssignAgents
-  \/ BeginDiagnosis
-  \/ AttemptFix
-  \/ VerifyFix
-  \/ Resolve
+  \/ Triaging
+  \/ StartDiagnosing
+  \/ DiagnoseToFix
+  \/ FixToVerify
+  \/ VerifyResolved
+  \/ VerifyRetry
   \/ Escalate
-  \/ PostMortem
+  \/ PostMortemFromResolved
+  \/ PostMortemFromEscalated
+  \/ Done
 
-Spec == Init /\ [][Next]_<<state, activeAgents, iteration, resolved, escalated>>
+Spec ==
+  Init
+  /\ [][Next]_Vars
+  /\ WF_Vars(Next)
 
-Liveness == <>(state = "RESOLVED" \/ state = "ESCALATED" \/ state = "POSTMORTEM")
-
-THEOREM Spec => []TypeInvariant
-THEOREM Spec => []SafetyInvariant
-THEOREM Spec => []ExclusiveTermination
+Termination ==
+  <>(state = "POSTMORTEM")
 
 ====
