@@ -18,11 +18,14 @@ class IntelligenceClient:
         *,
         systems: Optional[list[str]] = None,
         explain: bool = False,
+        metadata: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]:
         payload = {
             "question": question,
             "systems": systems or [],
             "explain": explain,
+            "tenant": self._root.tenant,
+            "metadata": metadata or {},
         }
         response = await self._root._request(
             "POST",
@@ -41,10 +44,13 @@ class IncidentCommandClient:
         *,
         incident_id: str,
         auto_deploy: bool = False,
+        metadata: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]:
         payload = {
-            "incident_id": incident_id,
-            "auto_deploy": auto_deploy,
+            "incidentId": incident_id,
+            "autoDeploy": auto_deploy,
+            "tenant": self._root.tenant,
+            "metadata": metadata or {},
         }
         response = await self._root._request(
             "POST",
@@ -76,13 +82,13 @@ class SapConnectorClient:
         work_centre: str,
     ) -> dict[str, Any]:
         payload = {
-            "equipment_id": equipment_id,
+            "equipmentId": equipment_id,
             "plant": plant,
-            "order_type": order_type,
+            "orderType": order_type,
             "priority": priority,
-            "short_text": short_text,
-            "long_text": long_text,
-            "work_centre": work_centre,
+            "shortText": short_text,
+            "longText": long_text,
+            "workCentre": work_centre,
         }
         response = await self._root._request(
             "POST",
@@ -111,8 +117,8 @@ class UseCasesClient:
     ) -> dict[str, Any]:
         payload = {
             "documents": documents,
-            "target_systems": target_systems,
-            "output_format": output_format,
+            "targetSystems": target_systems,
+            "outputFormat": output_format,
         }
         response = await self._root._request(
             "POST",
@@ -191,10 +197,6 @@ class EventStreamClient:
 
 
 class AetherClient:
-    """
-    Official AETHER Python SDK — async-first, fully typed.
-    """
-
     def __init__(
         self,
         api_key: str,
