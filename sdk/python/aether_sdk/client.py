@@ -111,7 +111,7 @@ class UseCasesClient:
     async def ma_due_diligence(
         self,
         *,
-        documents: list[Any],
+        documents: list[str],
         target_systems: list[str],
         output_format: str = "executive_brief",
     ) -> dict[str, Any]:
