@@ -1,22 +1,9 @@
+using Aether.Models.Teams;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 namespace Aether.API.Endpoints;
-
-internal sealed record IncidentCommandInvokeRequest(
-    string IncidentId,
-    bool AutoDeploy = false
-);
-
-internal sealed record IncidentCommandInvokeResponse(
-    string IncidentId,
-    string Status,
-    int IterationCount,
-    bool DeployedFix,
-    string ResolutionSummary,
-    IDictionary<string, string>? Metadata = null
-);
 
 internal static class IncidentCommandEndpoints
 {
@@ -34,11 +21,15 @@ internal static class IncidentCommandEndpoints
                 ResolutionSummary: request.AutoDeploy
                     ? "Stub incident workflow resolved the issue with automatic remediation."
                     : "Stub incident workflow generated a proposed remediation without deployment.",
+                Actions: request.AutoDeploy
+                    ? new List<string> { "diagnose", "apply-fix", "verify", "resolve" }
+                    : new List<string> { "diagnose", "propose-fix" },
                 Metadata: new Dictionary<string, string>
                 {
                     ["mode"] = "stub",
                     ["auto_deploy_requested"] = request.AutoDeploy.ToString(),
-                    ["route"] = "incident-command"
+                    ["route"] = "incident-command",
+                    ["tenant"] = request.Tenant ?? string.Empty
                 }
             );
 
