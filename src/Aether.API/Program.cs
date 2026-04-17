@@ -34,5 +34,6 @@ app.MapGet("/health", () => Results.Ok(new
 // Domain endpoints
 app.MapIntelligenceEndpoints();
 app.MapIncidentCommandEndpoints();
+app.MapConnectorEndpoints();
 
 app.Run();
