@@ -31,7 +31,8 @@ app.MapGet("/health", () => Results.Ok(new
     utc = DateTimeOffset.UtcNow
 }));
 
-// Intelligence endpoints
+// Domain endpoints
 app.MapIntelligenceEndpoints();
+app.MapIncidentCommandEndpoints();
 
 app.Run();
