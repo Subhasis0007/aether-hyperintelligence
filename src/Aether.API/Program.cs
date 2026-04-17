@@ -1,3 +1,5 @@
+using Aether.API.Endpoints;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Basic services
@@ -13,7 +15,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Minimal health endpoint
+// Root endpoint
 app.MapGet("/", () => Results.Ok(new
 {
     service = "Aether.API",
@@ -21,11 +23,15 @@ app.MapGet("/", () => Results.Ok(new
     timestamp = DateTimeOffset.UtcNow
 }));
 
+// Health endpoint
 app.MapGet("/health", () => Results.Ok(new
 {
     status = "healthy",
     service = "Aether.API",
     utc = DateTimeOffset.UtcNow
 }));
+
+// Intelligence endpoints
+app.MapIntelligenceEndpoints();
 
 app.Run();
