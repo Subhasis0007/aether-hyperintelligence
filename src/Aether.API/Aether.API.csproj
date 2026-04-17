@@ -15,4 +15,8 @@
     <ProjectReference Include="..\Aether.Agents\Aether.Agents.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+  </ItemGroup>
+
 </Project>
