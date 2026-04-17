@@ -16,7 +16,9 @@ public sealed class ApiEndpointRouteTests
 
         app.MapIntelligenceEndpoints();
 
-        var patterns = app.DataSources
+        var routeBuilder = (IEndpointRouteBuilder)app;
+
+        var patterns = routeBuilder.DataSources
             .SelectMany(ds => ds.Endpoints)
             .OfType<RouteEndpoint>()
             .Select(e => e.RoutePattern.RawText)
@@ -33,7 +35,9 @@ public sealed class ApiEndpointRouteTests
 
         app.MapIncidentCommandEndpoints();
 
-        var patterns = app.DataSources
+        var routeBuilder = (IEndpointRouteBuilder)app;
+
+        var patterns = routeBuilder.DataSources
             .SelectMany(ds => ds.Endpoints)
             .OfType<RouteEndpoint>()
             .Select(e => e.RoutePattern.RawText)
@@ -50,7 +54,9 @@ public sealed class ApiEndpointRouteTests
 
         app.MapConnectorEndpoints();
 
-        var patterns = app.DataSources
+        var routeBuilder = (IEndpointRouteBuilder)app;
+
+        var patterns = routeBuilder.DataSources
             .SelectMany(ds => ds.Endpoints)
             .OfType<RouteEndpoint>()
             .Select(e => e.RoutePattern.RawText)
@@ -67,7 +73,9 @@ public sealed class ApiEndpointRouteTests
 
         app.MapUseCasesEndpoints();
 
-        var patterns = app.DataSources
+        var routeBuilder = (IEndpointRouteBuilder)app;
+
+        var patterns = routeBuilder.DataSources
             .SelectMany(ds => ds.Endpoints)
             .OfType<RouteEndpoint>()
             .Select(e => e.RoutePattern.RawText)
