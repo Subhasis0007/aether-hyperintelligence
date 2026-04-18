@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import json
@@ -26,15 +27,19 @@ def _required_env(name: str) -> str:
 
 
 def _build_lm():
+    """
+    Correct Azure OpenAI configuration.
+    Uses deployment-scoped BASE URL to avoid Azure 'Resource not found' errors.
+    """
     deployment = _required_env("AZURE_OPENAI_DEPLOYMENT")
-    endpoint = _required_env("AZURE_OPENAI_ENDPOINT").rstrip("/")
+    base_url = _required_env("AZURE_OPENAI_BASE_URL")
     api_key = _required_env("AZURE_OPENAI_API_KEY")
     api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-08-01-preview").strip()
 
     return dspy.LM(
         f"azure/{deployment}",
         api_key=api_key,
-        api_base=endpoint,
+        api_base=base_url,          # ✅ full /openai/deployments/{name}
         api_version=api_version,
         max_tokens=2000,
     )
@@ -80,10 +85,7 @@ dspy.configure(lm=lm)
 
 
 class IncidentTriageSignature(dspy.Signature):
-    """Analyse a ServiceNow incident and classify it for autonomous resolution.
-    Determine priority, root cause category, assignment group,
-    and whether AETHER can resolve it without human intervention.
-    """
+    """Analyse a ServiceNow incident and classify it for autonomous resolution."""
 
     incident_text: str = dspy.InputField(desc="Full incident description and symptoms")
     kb_articles: str = dspy.InputField(desc="Top relevant KB articles from retrieval")
