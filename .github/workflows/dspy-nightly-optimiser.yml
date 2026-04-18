@@ -1,3 +1,4 @@
+
 name: dspy-nightly-optimiser
 
 on:
@@ -18,8 +19,10 @@ jobs:
       AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
       AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
       AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
@@ -35,9 +38,11 @@ jobs:
         run: |
           set -e
           python -m pip install --upgrade pip
+
           if [ -f requirements-dspy.txt ]; then
             pip install -r requirements-dspy.txt
           fi
+
           pip install \
             dspy-ai \
             litellm==1.48.3 \

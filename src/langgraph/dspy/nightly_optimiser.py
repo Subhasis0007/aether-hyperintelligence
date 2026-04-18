@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import json
@@ -28,23 +29,28 @@ def _required_env(name: str) -> str:
     return value
 
 
-def _build_lm():
+def _build_lm() -> dspy.LM:
     deployment = _required_env("AZURE_OPENAI_DEPLOYMENT")
     endpoint = _required_env("AZURE_OPENAI_ENDPOINT").rstrip("/")
     api_key = _required_env("AZURE_OPENAI_API_KEY")
     api_version = _required_env("AZURE_OPENAI_API_VERSION")
 
+    # IMPORTANT:
+    # - model MUST be "azure/<deployment-name>"
+    # - api_base MUST be the root resource endpoint only
     return dspy.LM(
-        f"azure/{deployment}",     # <-- deployment ONLY here
+        model=f"azure/{deployment}",
         api_key=api_key,
-        api_base=endpoint,         # <-- ROOT endpoint only
+        api_base=endpoint,
         api_version=api_version,
         max_tokens=2000,
+        temperature=0.1,
     )
 
 
+# Configure DSPy globally
 lm = _build_lm()
-dspy.configure(lm=lm)
+dspy.settings.configure(lm=lm)
 
 
 # ---------------- DSPy PROGRAM ----------------
@@ -53,6 +59,7 @@ class IncidentTriageSignature(dspy.Signature):
     incident_text: str = dspy.InputField()
     kb_articles: str = dspy.InputField()
     recent_changes: str = dspy.InputField()
+
     priority: str = dspy.OutputField()
     category: str = dspy.OutputField()
     auto_resolvable: bool = dspy.OutputField()
@@ -63,7 +70,7 @@ class IncidentTriageAgent(dspy.Module):
         super().__init__()
         self.classify = dspy.ChainOfThought(IncidentTriageSignature)
 
-    def forward(self, incident_text, kb_articles, recent_changes):
+    def forward(self, incident_text: str, kb_articles: str, recent_changes: str):
         return self.classify(
             incident_text=incident_text,
             kb_articles=kb_articles,
@@ -86,6 +93,7 @@ def run_nightly_optimisation():
 
     metrics = store.load_last_30_days(agent="incident_triage")
 
+    # Fallback to static metrics for cold starts
     if len(metrics.successful) + len(metrics.failed) < 5:
         metrics = _load_sample_metrics()
 
@@ -103,9 +111,9 @@ def run_nightly_optimisation():
 
     def metric(example, pred, trace=None):
         return (
-            int(example.priority == pred.priority) +
-            int(example.category == pred.category) +
-            int(example.auto_resolvable == pred.auto_resolvable)
+            int(example.priority == pred.priority)
+            + int(example.category == pred.category)
+            + int(example.auto_resolvable == pred.auto_resolvable)
         ) / 3
 
     teleprompter = BootstrapFewShotWithRandomSearch(
@@ -115,13 +123,15 @@ def run_nightly_optimisation():
         num_threads=4,
     )
 
-    baseline = IncidentTriageAgent()
-    optimised = teleprompter.compile(IncidentTriageAgent(), trainset=trainset)
+    optimised = teleprompter.compile(
+        IncidentTriageAgent(),
+        trainset=trainset,
+    )
 
     if optimised:
         GitHubPRCreator(_required_env("GITHUB_TOKEN")).create(
             title="[DSPy Auto] incident_triage improvement",
-            body="Automated DSPy optimisation",
+            body="Automated nightly DSPy optimisation using Azure OpenAI",
             auto_merge=True,
         )
 
