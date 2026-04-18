@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import json
 import os
+from pathlib import Path
+from types import SimpleNamespace
+
 import dspy
 from dspy.teleprompt import BootstrapFewShotWithRandomSearch
 
 from aether_sdk import AetherMetricsStore, GitHubPRCreator
+
+
+BASE_DIR = Path(__file__).resolve().parent
+SAMPLE_METRICS_PATH = BASE_DIR / "data" / "sample_metrics.json"
 
 
 def _required_env(name: str) -> str:
@@ -23,8 +31,6 @@ def _build_lm():
     api_key = _required_env("AZURE_OPENAI_API_KEY")
     api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-08-01-preview").strip()
 
-    # DSPy expects provider-prefixed model strings with LiteLLM-backed providers.
-    # For Azure OpenAI, LiteLLM expects model="azure/<deployment_name>".
     return dspy.LM(
         f"azure/{deployment}",
         api_key=api_key,
@@ -34,6 +40,41 @@ def _build_lm():
     )
 
 
+def _load_sample_metrics():
+    if not SAMPLE_METRICS_PATH.exists():
+        raise RuntimeError(f"Sample metrics file not found: {SAMPLE_METRICS_PATH}")
+
+    payload = json.loads(SAMPLE_METRICS_PATH.read_text(encoding="utf-8-sig"))
+
+    successful = [SimpleNamespace(**row) for row in payload.get("successful", [])]
+    failed = [SimpleNamespace(**row) for row in payload.get("failed", [])]
+
+    return SimpleNamespace(successful=successful, failed=failed)
+
+
+def _ensure_training_metrics(metrics):
+    successful_count = len(getattr(metrics, "successful", []))
+    failed_count = len(getattr(metrics, "failed", []))
+
+    if successful_count + failed_count < 5:
+        print(
+            f"[WARN] Supabase returned only {successful_count} successful + "
+            f"{failed_count} failed examples. Falling back to local sample metrics."
+        )
+        metrics = _load_sample_metrics()
+        successful_count = len(metrics.successful)
+        failed_count = len(metrics.failed)
+
+    print(f"Loaded {successful_count} successful + {failed_count} failed examples")
+
+    if successful_count + failed_count < 5:
+        raise RuntimeError(
+            "Not enough training examples loaded for DSPy optimisation, even after fallback."
+        )
+
+    return metrics
+
+
 lm = _build_lm()
 dspy.configure(lm=lm)
 
@@ -41,7 +82,8 @@ dspy.configure(lm=lm)
 class IncidentTriageSignature(dspy.Signature):
     """Analyse a ServiceNow incident and classify it for autonomous resolution.
     Determine priority, root cause category, assignment group,
-    and whether AETHER can resolve it without human intervention."""
+    and whether AETHER can resolve it without human intervention.
+    """
 
     incident_text: str = dspy.InputField(desc="Full incident description and symptoms")
     kb_articles: str = dspy.InputField(desc="Top relevant KB articles from retrieval")
@@ -73,7 +115,7 @@ def run_nightly_optimisation():
     )
 
     metrics = store.load_last_30_days(agent="incident_triage")
-    print(f"Loaded {len(metrics.successful)} successful + {len(metrics.failed)} failed examples")
+    metrics = _ensure_training_metrics(metrics)
 
     trainset = [
         dspy.Example(
@@ -88,10 +130,13 @@ def run_nightly_optimisation():
     ]
 
     if len(trainset) < 5:
-        raise RuntimeError("Not enough training examples loaded for DSPy optimisation.")
+        raise RuntimeError("Not enough successful examples available to build a DSPy trainset.")
 
     testset = trainset[-20:] if len(trainset) > 20 else trainset[-5:]
     trainset = trainset[:-20] if len(trainset) > 20 else trainset[:-1]
+
+    if not trainset:
+        raise RuntimeError("Training set is empty after splitting train/test examples.")
 
     def aether_metric(example, pred, trace=None):
         return (
@@ -124,7 +169,9 @@ def run_nightly_optimisation():
     print(f"Accuracy: before={before_acc:.1%}  after={after_acc:.1%}  delta={delta:+.1%}")
 
     if delta > 0.02:
-        optimised.save("src/langgraph/dspy/optimised/incident_triage.json")
+        output_dir = BASE_DIR / "optimised"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        optimised.save(str(output_dir / "incident_triage.json"))
 
         pr = GitHubPRCreator(_required_env("GITHUB_TOKEN"))
         pr.create(
