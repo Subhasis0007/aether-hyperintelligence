@@ -1,50 +1,57 @@
-﻿name: dspy-nightly-optimiser
+﻿
+name: DSPy Nightly Optimiser
 
 on:
+  workflow_dispatch: {}
   schedule:
-    - cron: '0 2 * * *'
-  workflow_dispatch:
-
-permissions:
-  contents: write
-  pull-requests: write
+    # Runs every day at 02:00 UTC
+    - cron: "0 2 * * *"
 
 jobs:
-  optimise:
+  dspy-nightly:
+    name: DSPy Auto Optimisation
     runs-on: ubuntu-latest
 
+    # ✅ IMPORTANT: Secrets explicitly mapped to env
+    env:
+      AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+      AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      AETHER_API_KEY: ${{ secrets.AETHER_API_KEY }}
+      AETHER_TENANT_ID: ${{ secrets.AETHER_TENANT_ID }}
+
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements-dspy.txt
+          pip install -r requirements.txt
 
-      - name: Run DSPy nightly optimiser
-        env:
-          # Generic model/base/key options for modern DSPy LM(...)
-          AETHER_DSPY_MODEL: ${{ vars.AETHER_DSPY_MODEL }}
-          AETHER_API_BASE: ${{ vars.AETHER_API_BASE }}
-          AETHER_API_KEY: ${{ secrets.AETHER_API_KEY }}
+      # ✅ Safe visibility check (does not print secrets)
+      - name: Validate required environment variables
+        run: |
+          echo "AZURE_OPENAI_ENDPOINT set? -> ${AZURE_OPENAI_ENDPOINT:+YES}"
+          echo "AZURE_OPENAI_API_KEY set? -> ${AZURE_OPENAI_API_KEY:+YES}"
+          echo "AZURE_OPENAI_DEPLOYMENT set? -> ${AZURE_OPENAI_DEPLOYMENT:+YES}"
+          echo "AZURE_OPENAI_API_VERSION set? -> ${AZURE_OPENAI_API_VERSION:+YES}"
+          echo "SUPABASE_URL set? -> ${SUPABASE_URL:+YES}"
+          echo "SUPABASE_KEY set? -> ${SUPABASE_KEY:+YES}"
+          echo "✅ Environment looks good"
 
-          # Optional fallbacks if you prefer Azure/OpenAI naming
-          AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-          # Metrics / PR integration
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          AETHER_PR_BASE_BRANCH: main
+      - name: Run DSPy Nightly Optimiser
         run: |
           python src/langgraph/dspy/nightly_optimiser.py
