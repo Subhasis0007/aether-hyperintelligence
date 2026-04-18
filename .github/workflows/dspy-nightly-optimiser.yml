@@ -4,14 +4,13 @@ name: DSPy Nightly Optimiser
 on:
   workflow_dispatch: {}
   schedule:
-    # Every day at 02:00 UTC
+    # Runs every day at 02:00 UTC
     - cron: "0 2 * * *"
 
-# ✅ REQUIRED so PRs + commits work
+# ✅ VALID permissions only
 permissions:
   contents: write
   pull-requests: write
-  workflows: write
 
 jobs:
   dspy-nightly:
@@ -19,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
-    # ✅ ALL secrets mapped explicitly
+    # ✅ Explicit secret injection (critical)
     env:
       # Azure OpenAI
       AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
@@ -31,14 +30,13 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
-      # GitHub automation (fine‑grained PAT)
+      # GitHub automation (PAT)
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # AETHER internal
       AETHER_API_KEY: ${{ secrets.AETHER_API_KEY }}
       AETHER_TENANT_ID: ${{ secrets.AETHER_TENANT_ID }}
 
-      # Defensive defaults
       PYTHONUNBUFFERED: "1"
       PYTHONDONTWRITEBYTECODE: "1"
 
@@ -57,7 +55,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ✅ HARD FAIL if any required secret is missing
       - name: ✅ Validate required environment variables
         shell: bash
         run: |
