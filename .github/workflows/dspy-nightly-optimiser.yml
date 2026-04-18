@@ -42,7 +42,7 @@ jobs:
           python - << 'PY'
           import os, sys
           required = [
-              "AZURE_OPENAI_ENDPOINT",
+              "AZURE_OPENAI_BASE_URL",
               "AZURE_OPENAI_API_KEY",
               "AZURE_OPENAI_DEPLOYMENT",
               "AZURE_OPENAI_API_VERSION",
@@ -60,3 +60,4 @@ jobs:
       - name: Run DSPy nightly optimiser
         run: |
           python src/langgraph/dspy/nightly_optimiser.py
+          

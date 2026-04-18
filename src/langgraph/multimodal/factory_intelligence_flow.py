@@ -1,4 +1,5 @@
-﻿from __future__ import annotations
+﻿
+from __future__ import annotations
 
 import asyncio
 import base64
@@ -11,11 +12,25 @@ from openai import AsyncAzureOpenAI
 from aether_sdk import AetherClient, FactoryState
 
 
+def _required_env(name: str) -> str:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise RuntimeError(
+            f"Missing required environment variable: {name}. "
+            f"Set it in GitHub Actions secrets or your local environment."
+        )
+    return value
+
+
 def _get_client() -> AsyncAzureOpenAI:
+    """
+    Azure OpenAI client using DEPLOYMENT-SCOPED base URL.
+    This removes all dependency on AZURE_OPENAI_ENDPOINT.
+    """
     return AsyncAzureOpenAI(
-        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-        api_key=os.environ["AZURE_OPENAI_API_KEY"],
+        api_key=_required_env("AZURE_OPENAI_API_KEY"),
         api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2024-08-01-preview"),
+        base_url=_required_env("AZURE_OPENAI_BASE_URL"),
     )
 
 
@@ -25,11 +40,11 @@ client = _get_client()
 async def analyse_factory_state(state: FactoryState) -> FactoryState:
     """LangGraph-style node: fuse image, audio, and OPC-UA signals and decide action."""
 
-    if "audio_bytes" not in state or not state["audio_bytes"]:
+    if not state.get("audio_bytes"):
         raise ValueError("state['audio_bytes'] is required")
-    if "image_bytes" not in state or not state["image_bytes"]:
+    if not state.get("image_bytes"):
         raise ValueError("state['image_bytes'] is required")
-    if "opcua_readings" not in state or not isinstance(state["opcua_readings"], dict):
+    if not isinstance(state.get("opcua_readings"), dict):
         raise ValueError("state['opcua_readings'] must be a dict")
 
     # 1) Transcribe factory audio
@@ -52,7 +67,7 @@ async def analyse_factory_state(state: FactoryState) -> FactoryState:
         opcua = state["opcua_readings"]
 
         response = await client.chat.completions.create(
-            model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4o"),
+            model=_required_env("AZURE_OPENAI_DEPLOYMENT"),
             response_format={"type": "json_object"},
             messages=[
                 {
@@ -92,53 +107,38 @@ async def analyse_factory_state(state: FactoryState) -> FactoryState:
         content = response.choices[0].message.content or "{}"
         result = json.loads(content)
 
-        # Defensive normalization
-        if not isinstance(result.get("anomalies"), list):
-            result["anomalies"] = [str(result.get("anomalies", "unknown anomaly"))]
+        # Normalize output defensively
+        result["anomalies"] = (
+            result["anomalies"]
+            if isinstance(result.get("anomalies"), list)
+            else [str(result.get("anomalies", "unknown anomaly"))]
+        )
 
         try:
             result["severity"] = int(result.get("severity", 1))
         except Exception:
             result["severity"] = 1
 
-        if "action" not in result or not result["action"]:
-            result["action"] = "MONITOR"
+        result.setdefault("action", "MONITOR")
+        result.setdefault("reasoning", "")
 
-        if "reasoning" not in result:
-            result["reasoning"] = ""
-
-        # 3) Autonomous action: severity 4-5 => create SAP PM emergency order
-        if result["severity"] >= 4 or str(result["action"]).upper() == "STOP":
+        # 3) Autonomous action
+        if result["severity"] >= 4 or result["action"].upper() == "STOP":
             aether = AetherClient(api_key=os.environ.get("AETHER_API_KEY", ""))
-
-            first_anomaly = (
-                result["anomalies"][0]
-                if result["anomalies"]
-                else "Unspecified anomaly detected"
-            )
 
             pm_order = await aether.connectors.sap.create_maintenance_order(
                 equipment_id=opcua.get("equipment_id"),
                 plant=opcua.get("plant_code", "1000"),
                 order_type="PM01",
                 priority="1",
-                short_text=f"AETHER Vision: {first_anomaly}",
+                short_text=f"AETHER Vision: {result['anomalies'][0]}",
                 long_text=result["reasoning"],
                 work_centre=opcua.get("work_centre", "MAINT"),
             )
 
-            return {
-                **state,
-                "action": "STOP",
-                "sap_order": pm_order,
-                "analysis": result,
-            }
+            return {**state, "action": "STOP", "sap_order": pm_order, "analysis": result}
 
-        return {
-            **state,
-            "action": result["action"],
-            "analysis": result,
-        }
+        return {**state, "action": result["action"], "analysis": result}
 
     finally:
         try:
@@ -149,20 +149,19 @@ async def analyse_factory_state(state: FactoryState) -> FactoryState:
 
 # Optional local demo runner
 async def _demo():
-    sample_image = b"fake-jpeg-bytes"
-    sample_audio = b"fake-wav-bytes"
     sample_state: FactoryState = {
-        "image_bytes": sample_image,
-        "audio_bytes": sample_audio,
+        "image_bytes": b"fake-jpeg-bytes",
+        "audio_bytes": b"fake-wav-bytes",
         "opcua_readings": {
             "equipment_id": "MIXER-17",
             "plant_code": "1000",
             "work_centre": "MAINT",
             "temperature_c": 91.4,
             "vibration_mm_s": 7.8,
-            "pressure_bar": 5.1
+            "pressure_bar": 5.1,
         },
     }
+
     result = await analyse_factory_state(sample_state)
     print(json.dumps(result, indent=2, default=str))
 
