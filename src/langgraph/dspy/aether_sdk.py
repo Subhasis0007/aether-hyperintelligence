@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import os
@@ -71,7 +71,7 @@ class AetherMetricsStore:
 
         # Fallback path: local JSON sample
         sample_path = pathlib.Path(__file__).parent / "data" / "sample_metrics.json"
-        payload = json.loads(sample_path.read_text(encoding="utf-8"))
+        payload = json.loads(sample_path.read_text(encoding="utf-8-sig"))
         successful = [MetricItem(**x) for x in payload.get("successful", [])]
         failed = [MetricItem(**x) for x in payload.get("failed", [])]
         return MetricsBundle(successful=successful, failed=failed)
