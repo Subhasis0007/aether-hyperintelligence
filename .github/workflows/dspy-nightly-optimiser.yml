@@ -20,23 +20,28 @@ jobs:
       AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-      GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install Python dependencies
-         run: |
-           set -e
-           python -m pip install --upgrade pip
-           if [ -f requirements-dspy.txt ]; then
-           pip install -r requirements-dspy.txt
-           fi
-           pip install dspy-ai litellm==1.48.3 openai>=1.10.0,<2
+        run: |
+          set -e
+          python -m pip install --upgrade pip
+          if [ -f requirements-dspy.txt ]; then
+            pip install -r requirements-dspy.txt
+          fi
+          pip install \
+            dspy-ai \
+            litellm==1.48.3 \
+            "openai>=1.10.0,<2"
 
       - name: Run DSPy optimiser
         run: |
