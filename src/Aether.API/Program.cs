@@ -8,6 +8,8 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+app.UseWebSockets();
+
 // Swagger in development
 if (app.Environment.IsDevelopment())
 {
@@ -36,5 +38,6 @@ app.MapIntelligenceEndpoints();
 app.MapIncidentCommandEndpoints();
 app.MapConnectorEndpoints();
 app.MapUseCasesEndpoints();
+app.MapInterfaceEndpoints();
 
 app.Run();
