@@ -62,7 +62,11 @@ jobs:
 
           pip install \
             litellm>=1.58.0 \
-            "openai>=1.10.0,<2"
+            "openai>=1.10.0,<2" \
+            requests>=2.32.0
+
+      - name: Test Azure OpenAI diagnostics
+        run: python scripts/test_azure_openai.py
 
       - name: Run DSPy optimiser
         run: python -u src/langgraph/dspy/nightly_optimiser.py
