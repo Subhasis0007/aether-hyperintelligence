@@ -40,6 +40,17 @@ def _build_lm() -> dspy.LM:
         print("See docs/AZURE_OPENAI_SETUP.md for setup instructions.")
         raise
 
+    # Validate endpoint format
+    if not endpoint.startswith("https://"):
+        print(f"ERROR: AZURE_OPENAI_ENDPOINT must start with 'https://', got: {endpoint}")
+        print("       Correct format: https://my-resource.openai.azure.com/")
+        raise ValueError("Invalid endpoint URL format")
+    
+    if ".openai.azure.com" not in endpoint:
+        print(f"ERROR: AZURE_OPENAI_ENDPOINT must contain '.openai.azure.com', got: {endpoint}")
+        print("       Check that you're using the correct Azure OpenAI resource endpoint.")
+        raise ValueError("Invalid endpoint URL format")
+
     # IMPORTANT:
     # - model MUST be "azure/<deployment-name>"
     # - api_base MUST be the root resource endpoint only
@@ -144,14 +155,26 @@ def run_nightly_optimisation():
             trainset=trainset,
         )
     except Exception as e:
+        error_msg = str(e)
         print(f"ERROR: DSPy optimization failed: {e}")
-        if "Resource not found" in str(e) or "AzureException" in str(e):
-            print("HINT: Your Azure OpenAI deployment or credentials are invalid.")
-            print("      Check docs/AZURE_OPENAI_SETUP.md and verify GitHub secrets:")
-            print("      - AZURE_OPENAI_ENDPOINT")
-            print("      - AZURE_OPENAI_API_KEY")
-            print("      - AZURE_OPENAI_DEPLOYMENT")
-            print("      - AZURE_OPENAI_API_VERSION")
+        
+        if "Resource not found" in error_msg or "AzureException" in error_msg:
+            print("\nDiagnostic Checklist:")
+            print("  1. Verify endpoint in GitHub secret AZURE_OPENAI_ENDPOINT")
+            print("     Format: https://resource-name.openai.azure.com/")
+            print("  2. Check deployment exists in Azure Portal:")
+            print("     Go to OpenAI resource → Deployments → See Deployment Name column")
+            print("     Update AZURE_OPENAI_DEPLOYMENT to match exactly (case-sensitive)")
+            print("  3. Verify API key is not expired in Azure Portal:")
+            print("     Go to OpenAI resource → Keys and Endpoint → Regenerate if needed")
+            print("  4. Check API version is supported in Azure Portal:")
+            print("     Common: 2024-02-15-preview, 2024-08-01-preview")
+            print("  5. Ensure deployment is enabled (not in deleted state)")
+            print("\n  💡 Tip: Use `curl` to test the connection:")
+            print("     curl -i -X GET 'https://RESOURCE.openai.azure.com/openai/deployments' \\")
+            print("          -H 'api-key: YOUR_API_KEY'")
+            print("     Should return 200 with list of deployments")
+        
         raise
 
     if optimised:
