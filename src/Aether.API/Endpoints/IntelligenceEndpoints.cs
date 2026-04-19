@@ -4,11 +4,19 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Aether.API.Endpoints;
 
+/// <summary>
+/// Registers intelligence-related API endpoints.
+/// </summary>
 public static class IntelligenceEndpoints
 {
+    /// <summary>
+    /// Maps the intelligence query endpoint.
+    /// </summary>
+    /// <param name="app">The endpoint route builder.</param>
+    /// <returns>The endpoint route builder for chaining.</returns>
     public static IEndpointRouteBuilder MapIntelligenceEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/v1/intelligence/query", async (IntelligenceQueryRequest request) =>
+        app.MapPost("/v1/intelligence/query", (IntelligenceQueryRequest request) =>
         {
             var systems = request.Systems is { Count: > 0 }
                 ? request.Systems

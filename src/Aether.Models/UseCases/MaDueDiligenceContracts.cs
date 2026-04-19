@@ -1,7 +1,7 @@
 namespace Aether.Models.UseCases;
 
 /// <summary>
-/// Request contract for running the M&A due diligence use case.
+/// Request contract for running the M&amp;A due diligence use case.
 /// </summary>
 public sealed class MaDueDiligenceRequest
 {
@@ -22,7 +22,7 @@ public sealed class MaDueDiligenceRequest
 }
 
 /// <summary>
-/// Response contract returned by the M&A due diligence workflow.
+/// Response contract returned by the M&amp;A due diligence workflow.
 /// </summary>
 public sealed class MaDueDiligenceResponse
 {

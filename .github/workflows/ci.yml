@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            sdk/python/pyproject.toml
+
+      - name: Restore .NET solution
+        run: dotnet restore aether-hyperintelligence.sln
+
+      - name: Build .NET solution with warnings as errors
+        run: dotnet build aether-hyperintelligence.sln --no-restore /warnaserror
+
+      - name: Run .NET tests
+        run: dotnet test aether-hyperintelligence.sln --no-build --verbosity normal
+
+      - name: Run Python SDK validation
+        shell: pwsh
+        working-directory: sdk/python
+        run: .\run_tests.ps1

@@ -405,10 +405,10 @@ Populate `.env` using the credential guide in `docs/setup.md`.
 docker-compose -f infrastructure/docker/docker-compose.yml up -d
 ```
 
-### 4. Validate service health
+### 4. Validate the local baseline
 
 ```bash
-python3 scripts/validate_local.py
+python scripts/validate_local.py
 ```
 
 ### 5. Run the offline demo
@@ -417,16 +417,13 @@ python3 scripts/validate_local.py
 python3 scripts/demo_offline.py
 ```
 
-### Expected validation surface
+### Current validation surface
 
-- 14-service local stack healthy
-- 15 LangGraph state machine flows validated
-- 120 agent declarations validated
-- TLA+ checks passing
-- WASM sandbox smoke test passing
-- Kyber / Dilithium cryptographic verification passing
-- Connector mocks loadable offline
-- DSPy modules import successfully
+- .NET solution restore succeeds from the repository root
+- .NET solution builds cleanly with warnings treated as errors
+- .NET unit and integration test projects pass locally
+- Python SDK installs in editable mode and passes compile checks plus unittest discovery
+- TLA+ model checking and eBPF compilation remain covered by dedicated GitHub Actions workflows
 
 ---
 
@@ -470,16 +467,11 @@ async def main():
 
 AETHER is built for high-signal engineering workflows with multiple quality gates.
 
-**Representative pipeline jobs**
-- `dotnet-build-test`
-- `python-tests`
-- `tla-plus-verify`
-- `kafka-schema-validate`
-- `wasm-validate`
-- `ebpf-compile`
-- `kong-validate`
-- `docker-build`
-- `security`
+**Current pipeline jobs**
+- `ci` for warning-as-error .NET build, .NET tests, and Python SDK validation
+- `tla-plus-verify` for model checking critical workflow specifications
+- `ebpf-compile` for metadata-only eBPF compilation on Linux
+- `dspy-nightly-optimiser` for secret-backed DSPy optimisation runs
 
 ```mermaid
 flowchart LR
