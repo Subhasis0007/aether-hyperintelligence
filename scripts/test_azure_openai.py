@@ -12,6 +12,8 @@ import os
 import sys
 from urllib.parse import urlparse
 
+import requests
+
 
 def test_env_vars():
     """Test that all required environment variables are set."""
@@ -114,6 +116,93 @@ def test_api_version():
     return True
 
 
+def test_deployments_endpoint():
+    """Test the raw Azure OpenAI deployments endpoint to separate config failures."""
+    print("\n=== Testing Azure Deployments Endpoint ===\n")
+
+    endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "").strip().rstrip("/")
+    api_key = os.environ.get("AZURE_OPENAI_API_KEY", "").strip()
+    configured_version = os.environ.get("AZURE_OPENAI_API_VERSION", "").strip()
+    deployment_name = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "").strip()
+
+    if not all([endpoint, api_key, configured_version]):
+        print("⚠️  Skipping deployments endpoint test (missing endpoint/key/api version)")
+        return True
+
+    versions_to_try = []
+    for version in [configured_version, "2024-02-15-preview", "2024-08-01-preview", "2023-12-01-preview"]:
+        if version and version not in versions_to_try:
+            versions_to_try.append(version)
+
+    headers = {"api-key": api_key}
+    last_status = None
+    found_working_version = None
+
+    for version in versions_to_try:
+        url = f"{endpoint}/openai/deployments?api-version={version}"
+        print(f"→ Testing deployments with api-version={version}")
+
+        try:
+            response = requests.get(url, headers=headers, timeout=20)
+        except requests.RequestException as exc:
+            print(f"  ❌ Request failed: {exc}")
+            continue
+
+        last_status = response.status_code
+
+        if response.ok:
+            print(f"  ✅ Status 200 OK")
+            try:
+                payload = response.json()
+                deployments = payload.get("data", []) if isinstance(payload, dict) else []
+                deployment_names = [item.get("id") or item.get("model") for item in deployments if isinstance(item, dict)]
+                
+                if deployment_names:
+                    print(f"  ✅ Available deployments in {endpoint}:")
+                    for name in deployment_names:
+                        marker = " ← YOU ARE USING THIS" if name == deployment_name else ""
+                        print(f"     - {name}{marker}")
+                    found_working_version = version
+                    if deployment_name not in deployment_names:
+                        print(f"\n  ⚠️  CRITICAL: Deployment '{deployment_name}' is NOT in this list!")
+                        print(f"     You must use one of: {', '.join(deployment_names)}")
+                    return True
+                else:
+                    print(f"  ⚠️  Status 200 but no deployments returned")
+            except ValueError:
+                print(f"  ⚠️  Status 200 but response was not valid JSON")
+            return True
+
+        body_excerpt = response.text.strip().replace("\n", " ")[:200]
+        print(f"  ❌ Status {response.status_code}")
+        if body_excerpt:
+            print(f"     Response: {body_excerpt[:100]}...")
+
+        if response.status_code == 401:
+            print("\n  🔴 DIAGNOSIS: API key is invalid or expired for this resource")
+            print("     - Regenerate the key in Azure Portal → Keys and Endpoint")
+            print("     - Update AZURE_OPENAI_API_KEY secret")
+            return False
+
+        if response.status_code == 403:
+            print("\n  🔴 DIAGNOSIS: Access denied (key valid but permissions missing)")
+            return False
+
+    if last_status == 404:
+        print("\n  🔴 CRITICAL: Azure returned 404 (Resource not found)")
+        print("     This means:")
+        print("     1. AZURE_OPENAI_ENDPOINT is wrong")
+        print("     2. AZURE_OPENAI_API_KEY belongs to wrong subscription/resource")
+        print("     3. No Azure OpenAI resource at all in this location")
+        print("\n     Actions:")
+        print("     - Verify AZURE_OPENAI_ENDPOINT in GitHub secrets matches Azure Portal")
+        print("     - Verify AZURE_OPENAI_API_KEY works with this resource")
+        print("     - Double-check subscription and region")
+
+    print("\n  No working API version found for deployments endpoint")
+    return False
+
+
 def test_litellm_connection():
     """Test LiteLLM connection to Azure OpenAI."""
     print("\n=== Testing LiteLLM Connection ===\n")
@@ -194,6 +283,7 @@ def main():
     results.append(("Endpoint Format", test_endpoint_format()))
     results.append(("Deployment Name", test_deployment_name()))
     results.append(("API Version", test_api_version()))
+    results.append(("Deployments Endpoint", test_deployments_endpoint()))
     results.append(("LiteLLM Connection", test_litellm_connection()))
     
     print("\n" + "=" * 60)
