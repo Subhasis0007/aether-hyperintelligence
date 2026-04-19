@@ -30,10 +30,15 @@ def _required_env(name: str) -> str:
 
 
 def _build_lm() -> dspy.LM:
-    deployment = _required_env("AZURE_OPENAI_DEPLOYMENT")
-    endpoint = _required_env("AZURE_OPENAI_ENDPOINT").rstrip("/")
-    api_key = _required_env("AZURE_OPENAI_API_KEY")
-    api_version = _required_env("AZURE_OPENAI_API_VERSION")
+    try:
+        deployment = _required_env("AZURE_OPENAI_DEPLOYMENT")
+        endpoint = _required_env("AZURE_OPENAI_ENDPOINT").rstrip("/")
+        api_key = _required_env("AZURE_OPENAI_API_KEY")
+        api_version = _required_env("AZURE_OPENAI_API_VERSION")
+    except RuntimeError as e:
+        print(f"ERROR: {e}")
+        print("See docs/AZURE_OPENAI_SETUP.md for setup instructions.")
+        raise
 
     # IMPORTANT:
     # - model MUST be "azure/<deployment-name>"
@@ -49,8 +54,13 @@ def _build_lm() -> dspy.LM:
 
 
 # Configure DSPy globally
-lm = _build_lm()
-dspy.settings.configure(lm=lm)
+try:
+    lm = _build_lm()
+    dspy.settings.configure(lm=lm)
+except Exception as e:
+    print(f"ERROR: Failed to configure Azure OpenAI: {e}")
+    print("See docs/AZURE_OPENAI_SETUP.md for setup instructions.")
+    raise
 
 
 # ---------------- DSPy PROGRAM ----------------
@@ -86,12 +96,17 @@ def _load_sample_metrics():
 
 
 def run_nightly_optimisation():
-    store = AetherMetricsStore(
-        _required_env("SUPABASE_URL"),
-        _required_env("SUPABASE_KEY"),
-    )
+    try:
+        store = AetherMetricsStore(
+            _required_env("SUPABASE_URL"),
+            _required_env("SUPABASE_KEY"),
+        )
 
-    metrics = store.load_last_30_days(agent="incident_triage")
+        metrics = store.load_last_30_days(agent="incident_triage")
+    except Exception as e:
+        print(f"WARNING: Could not load metrics from Supabase: {e}")
+        print("         Falling back to sample metrics.")
+        metrics = _load_sample_metrics()
 
     # Fallback to static metrics for cold starts
     if len(metrics.successful) + len(metrics.failed) < 5:
@@ -123,10 +138,21 @@ def run_nightly_optimisation():
         num_threads=4,
     )
 
-    optimised = teleprompter.compile(
-        IncidentTriageAgent(),
-        trainset=trainset,
-    )
+    try:
+        optimised = teleprompter.compile(
+            IncidentTriageAgent(),
+            trainset=trainset,
+        )
+    except Exception as e:
+        print(f"ERROR: DSPy optimization failed: {e}")
+        if "Resource not found" in str(e) or "AzureException" in str(e):
+            print("HINT: Your Azure OpenAI deployment or credentials are invalid.")
+            print("      Check docs/AZURE_OPENAI_SETUP.md and verify GitHub secrets:")
+            print("      - AZURE_OPENAI_ENDPOINT")
+            print("      - AZURE_OPENAI_API_KEY")
+            print("      - AZURE_OPENAI_DEPLOYMENT")
+            print("      - AZURE_OPENAI_API_VERSION")
+        raise
 
     if optimised:
         GitHubPRCreator(_required_env("GITHUB_TOKEN")).create(
@@ -137,4 +163,9 @@ def run_nightly_optimisation():
 
 
 if __name__ == "__main__":
-    run_nightly_optimisation()
+    try:
+        run_nightly_optimisation()
+    except Exception as e:
+        print(f"\nFATAL ERROR: Nightly optimization failed: {e}")
+        print("See docs/AZURE_OPENAI_SETUP.md for setup instructions.")
+        exit(1)
