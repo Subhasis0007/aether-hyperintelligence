@@ -209,12 +209,16 @@ def run_nightly_optimisation():
 
     if optimised:
         _print_debug("Creating GitHub PR with optimization results...")
-        GitHubPRCreator(_required_env("GITHUB_TOKEN")).create(
+        pr_result = GitHubPRCreator(_required_env("GITHUB_TOKEN")).create(
             title="[DSPy Auto] incident_triage improvement",
             body="Automated nightly DSPy optimisation using Azure OpenAI",
             auto_merge=True,
         )
-        _print_debug("PR created successfully")
+        status = pr_result.get("status") if isinstance(pr_result, dict) else None
+        if status in {"skipped", "exists", "forbidden"}:
+            _print_debug(f"PR step completed with status='{status}'")
+        else:
+            _print_debug("PR created successfully")
 
 
 if __name__ == "__main__":

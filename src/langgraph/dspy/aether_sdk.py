@@ -87,7 +87,22 @@ class GitHubPRCreator:
             raise RuntimeError("GITHUB_REPOSITORY is not set.")
         owner, name = repo.split("/", 1)
 
+        if not self.github_token.strip():
+            raise RuntimeError("GITHUB_TOKEN is not set.")
+
         branch = os.environ.get("GITHUB_HEAD_REF") or os.environ.get("GITHUB_REF_NAME") or "main"
+        base_branch = os.environ.get("AETHER_PR_BASE_BRANCH", "main")
+
+        # Scheduled/manual workflows usually run on main. Creating a PR from
+        # main to main is invalid and should not fail the optimizer run.
+        if branch == base_branch:
+            print(f"[INFO] Skipping PR creation because head branch '{branch}' equals base branch '{base_branch}'.")
+            return {
+                "status": "skipped",
+                "reason": "head_equals_base",
+                "head": branch,
+                "base": base_branch,
+            }
 
         headers = {
             "Authorization": f"Bearer {self.github_token}",
@@ -99,7 +114,7 @@ class GitHubPRCreator:
             "title": title,
             "body": body,
             "head": branch,
-            "base": os.environ.get("AETHER_PR_BASE_BRANCH", "main")
+            "base": base_branch
         }
 
         url = f"https://api.github.com/repos/{owner}/{name}/pulls"
@@ -109,6 +124,12 @@ class GitHubPRCreator:
         if resp.status_code == 422:
             print("[INFO] PR may already exist. GitHub returned 422.")
             return {"status": "exists", "response": resp.text}
+
+        # Do not fail nightly optimization when token permissions cannot create PRs.
+        if resp.status_code == 403:
+            print("[WARN] GitHub token cannot create PRs (403 Forbidden).")
+            print("[WARN] Continue without PR. Check Actions workflow token permissions and repository settings.")
+            return {"status": "forbidden", "response": resp.text}
 
         resp.raise_for_status()
         pr = resp.json()
