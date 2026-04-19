@@ -471,7 +471,7 @@ AETHER is built for high-signal engineering workflows with multiple quality gate
 - `ci` for warning-as-error .NET build, .NET tests, and Python SDK validation
 - `tla-plus-verify` for model checking critical workflow specifications
 - `ebpf-compile` for metadata-only eBPF compilation on Linux
-- `dspy-nightly-optimiser` for secret-backed DSPy optimisation runs
+- `dspy-nightly-optimiser` for secret-backed DSPy optimisation runs (see [Azure OpenAI Setup Guide](docs/AZURE_OPENAI_SETUP.md))
 
 ```mermaid
 flowchart LR
